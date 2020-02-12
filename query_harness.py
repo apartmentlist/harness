@@ -22,6 +22,7 @@ def search(payload, scorer=None):
 
 
 with open(sys.argv[1]) as read_file:
+    line_count = 0
     for line in read_file:
         responses = []
         query = json.loads(line)
@@ -37,9 +38,14 @@ with open(sys.argv[1]) as read_file:
                     'variation': scorer if scorer else 'control'
                 })
             else:
+                print(response.text)
                 break
         if len(responses) == len(scorers):
+            print(line_count)
             for response in responses:
                 write_file.write('{}\n{}\n'.format(
                     response['variation'], response['payload'].text)
                 )
+        else:
+            print('error on ' + line_count)
+        line_count += 1
