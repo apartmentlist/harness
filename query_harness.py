@@ -9,16 +9,17 @@ write_file = open("responses.txt", "a+")
 
 
 def search(payload, scorer=None):
-    payload.update({'scorer': scorer})
+    request_payload = payload.copy()
+    request_payload['scorer'] = scorer
     return requests.post(
             URL_PROD,
-            data=json.dumps(payload),
+            data=json.dumps(request_payload),
             headers={
                 'content-type': 'application/json', 'Authorization': 'Token token={}'.format(
                     os.environ['TOKEN']
                 )
             }
-        )
+        ), request_payload
 
 
 with open(sys.argv[1]) as read_file:
@@ -30,22 +31,22 @@ with open(sys.argv[1]) as read_file:
 
         # call search endpoints scorers
         for scorer in scorers:
-            response = search(query, scorer)
+            response, payload = search(query, scorer)
 
             if response.status_code == 200:
                 responses.append({
                     'payload': response,
-                    'variation': scorer if scorer else 'control'
+                    'scorer': scorer,
+                    'query': payload
                 })
             else:
                 print(response.text)
-                break
         if len(responses) == len(scorers):
             print(line_count)
             for response in responses:
                 write_file.write('{}\n{}\n'.format(
-                    response['variation'], response['payload'].text)
+                    json.dumps(response['query']), response['payload'].text)
                 )
         else:
-            print('error on ' + line_count)
+            print('error on ' + str(line_count))
         line_count += 1
